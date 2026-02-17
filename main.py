@@ -151,3 +151,10 @@ async def generate_style_transfer_short(
 @app.post("/verify-payment")
 async def verify_payment(payment_id: str = Form(...)):
     return {"status": "verified", "gateway": "Razorpay"}
+import uvicorn
+
+if __name__ == "__main__":
+    # This tells the app to use the port Render provides (defaulting to 8000)
+    port = int(os.environ.get("PORT", 8000))
+    # This starts the server
+    uvicorn.run("main:app", host="0.0.0.0", port=port)

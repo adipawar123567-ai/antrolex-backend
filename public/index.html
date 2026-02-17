@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Antrolex AI</title>
+    <style>
+        /* --- THIS IS THE PAINT --- */
+        body {
+            margin: 0;
+            background-color: #000000;
+            font-family: 'Arial', sans-serif;
+            color: white;
+            overflow-x: hidden;
+        }
+
+        /* The Animated Background from Google Flow */
+        #video-bg {
+            position: fixed;
+            right: 0; bottom: 0;
+            min-width: 100%; min-height: 100%;
+            z-index: -1;
+            opacity: 0.4; /* Darkens the video so text pops */
+        }
+
+        /* The Glass Navigation */
+        nav {
+            display: flex;
+            justify-content: space-between;
+            padding: 20px 50px;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid #00FFFF;
+        }
+
+        .logo { font-size: 24px; font-weight: bold; color: #00FFFF; text-shadow: 0 0 10px #00FFFF; }
+
+        /* The Container for your Labs */
+        .container {
+            max-width: 1200px;
+            margin: 100px auto;
+            text-align: center;
+        }
+
+        /* THE WHISK CARDS (Pricing & Labs) */
+        .grid {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .card {
+            width: 300px;
+            height: 400px;
+            /* This uses the image you made in Whisk! */
+            background-image: url('card_style.png'); 
+            background-size: cover;
+            border-radius: 20px;
+            padding: 20px;
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            transition: transform 0.3s;
+        }
+
+        .card:hover { transform: scale(1.05); border-color: #00FFFF; }
+
+        h2 { color: #00FFFF; }
+        
+        .btn {
+            background: linear-gradient(45deg, #00FFFF, #0099ff);
+            border: none;
+            padding: 10px 30px;
+            color: black;
+            font-weight: bold;
+            border-radius: 30px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        /* CHAT SECTION */
+        #chat-box {
+            width: 100%;
+            height: 300px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            overflow-y: scroll;
+            margin-bottom: 20px;
+            text-align: left;
+            padding: 20px;
+        }
+
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+    <video autoplay muted loop id="video-bg">
+        <source src="header_anim.mp4" type="video/mp4">
+    </video>
+
+    <nav>
+        <div class="logo">ANTROLEX AI</div>
+        <div>
+            <span onclick="showSection('chat')" style="cursor:pointer; margin:0 15px;">Chat</span>
+            <span onclick="showSection('image')" style="cursor:pointer; margin:0 15px;">Image Lab</span>
+            <span onclick="showSection('video')" style="cursor:pointer; margin:0 15px;">Video Lab</span>
+        </div>
+    </nav>
+
+    <div class="container">
+        
+        <div id="section-chat">
+            <h1>Gemini Chat</h1>
+            <div id="chat-box">
+                <div style="background: rgba(0,255,255,0.1); padding: 10px; border-radius: 10px;">Hello! I am Antrolex. How can I help?</div>
+            </div>
+            <input type="text" id="chat-input" placeholder="Type a message..." style="width: 70%; padding: 10px; border-radius: 20px; border: none;">
+            <button class="btn" onclick="sendMessage()">Send</button>
+            <button class="btn" style="padding: 10px 15px;" onclick="document.getElementById('file-upload').click()">+</button>
+            <input type="file" id="file-upload" hidden>
+        </div>
+
+        <div id="section-pricing" class="grid hidden">
+            <div class="card">
+                <h2>Lite</h2>
+                <h1>$6</h1>
+                <p>2,000 Credits</p>
+                <p>≈ 20 Fast Videos</p>
+                <button class="btn" onclick="buyCredits('lite')">Buy Now</button>
+            </div>
+            <div class="card">
+                <h2>Standard</h2>
+                <h1>$12</h1>
+                <p>5,000 Credits</p>
+                <p>≈ 50 Fast Videos</p>
+                <button class="btn" onclick="buyCredits('standard')">Buy Now</button>
+            </div>
+            <div class="card">
+                <h2>Pro</h2>
+                <h1>$30</h1>
+                <p>12,000 Credits</p>
+                <p>≈ 120 Fast Videos</p>
+                <button class="btn" onclick="buyCredits('pro')">Buy Now</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function showSection(name) {
+            // Hide all
+            document.getElementById('section-chat').classList.add('hidden');
+            document.getElementById('section-pricing').classList.add('hidden');
+            
+            // Show one
+            if(name === 'chat') document.getElementById('section-chat').classList.remove('hidden');
+            // (You can duplicate this logic for Image/Video labs)
+        }
+
+        // Connect to your Backend (Server.js)
+        async function sendMessage() {
+            const input = document.getElementById('chat-input').value;
+            // This connects to the code I gave you earlier!
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: input })
+            });
+            const data = await response.json();
+            // Add reply to box...
+        }
+    </script>
+</body>
+</html>

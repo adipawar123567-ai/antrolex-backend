@@ -5,3 +5,4 @@ python-multipart
 moviepy
 python-dotenv
 replicate
+pydantic

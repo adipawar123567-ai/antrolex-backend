@@ -4,6 +4,7 @@ import time
 import json
 import random
 import replicate
+from pydantic import BaseModel
 from google import genai # 2026 SDK
 from google.genai import types
 from fastapi import FastAPI, UploadFile, File, Form

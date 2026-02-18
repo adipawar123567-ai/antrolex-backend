@@ -152,6 +152,35 @@ async def generate_style_transfer_short(
 async def verify_payment(payment_id: str = Form(...)):
     return {"status": "verified", "gateway": "Razorpay"}
 import uvicorn
+# --- NEW: Viral Script Writer Feature ---
+class ScriptRequest(BaseModel):
+    topic: str
+    game: str = "GTA San Andreas" # Default game
+    tone: str = "Funny" # Default tone
+
+@app.post("/generate-viral-script")
+async def generate_script(request: ScriptRequest):
+    prompt = f"""
+    You are a professional YouTube scriptwriter for a gaming channel called 'Antrolex Gamerze'.
+    Write a viral, high-retention script for the game: {request.game}.
+    
+    TOPIC: {request.topic}
+    TONE: {request.tone}
+    
+    Structure the script with:
+    1. A Hook (0-5 seconds) - Explosive start.
+    2. The Intro - Fast explanation.
+    3. The Body - The story/rant with timestamps.
+    4. The Call to Action - Asking for likes/subs.
+    
+    Keep it under 60 seconds (Shorts format). Use slang like 'bro', 'damn', 'waisted'.
+    """
+    
+    try:
+        response = model.generate_content(prompt)
+        return {"script": response.text}
+    except Exception as e:
+        return {"error": str(e)}
 
 if __name__ == "__main__":
     # This tells the app to use the port Render provides (defaulting to 8000)

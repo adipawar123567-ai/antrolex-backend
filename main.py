@@ -61,6 +61,10 @@ class CrateItem(BaseModel):
     rarity: str 
     value: int 
 
+class RedeemRequest(BaseModel):
+    username: str
+    reward_type: str
+
 # --- UTILITY: GET/RESET USER STATS ---
 def get_user_stats(username: str):
     today = str(date.today())
@@ -109,6 +113,37 @@ async def open_crate(request: UserAction):
     
     if won.value > 0: user["coins"] += won.value
     return {"status": "success", "won_item": won, "new_energy": user["energy"], "new_balance": user["coins"]}
+
+# --- FEATURE 2.5: REWARDS STORE (GOOGLE PLAY CODES) ---
+REWARD_CATALOG = {
+    "play_100": {"name": "₹100 Google Play Code", "cost": 1000},
+    "play_500": {"name": "₹500 Google Play Code", "cost": 4500}
+}
+
+@app.post("/redeem-reward")
+async def redeem_reward(request: RedeemRequest):
+    user = get_user_stats(request.username)
+    
+    if request.reward_type not in REWARD_CATALOG:
+        return {"status": "error", "message": "Invalid reward item."}
+        
+    reward = REWARD_CATALOG[request.reward_type]
+    
+    if user["coins"] < reward["cost"]:
+        return {"status": "error", "message": f"Keep grinding! You need {reward['cost']} Antrolex Coins."}
+        
+    user["coins"] -= reward["cost"]
+    
+    # Generate a secure, randomized Google Play Code format
+    chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+    play_code = "-".join(["".join(random.choices(chars, k=4)) for _ in range(4)])
+    
+    return {
+        "status": "success", 
+        "message": f"Successfully redeemed {reward['name']}!",
+        "play_code": play_code,
+        "remaining_coins": user["coins"]
+    }
 
 # --- FEATURE 3: VIRAL THUMBNAIL GENERATOR (SECURED) ---
 @app.post("/generate-viral-thumbnail")
@@ -168,7 +203,6 @@ async def generate_style_transfer_short(user_video: UploadFile = File(...), ref_
         os.remove(user_path)
         os.remove(ref_path)
         
-        # FIX: Actually send the video file to the user for download
         return FileResponse(path=output_path, filename=output_path, media_type='video/mp4')
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

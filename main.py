@@ -8,28 +8,39 @@ import uvicorn
 from datetime import date
 from pydantic import BaseModel
 from typing import Optional, List
-from google import genai  # 2026 SDK
+from google import genai
 from google.genai import types
-from fastapi import FastAPI, UploadFile, File, Form
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Depends, Security
+from fastapi.security.api_key import APIKeyHeader
+from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
-from moviepy import VideoFileClip, concatenate_videoclips # MoviePy v2.0+
+from moviepy import VideoFileClip, concatenate_videoclips
 
 # 1. SETUP & AUTH
 load_dotenv()
-# Initializing the 2026 Gemini Client
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
-app = FastAPI()
+app = FastAPI(title="Antrolex AI Master Backend (SECURED)")
 
 # 2. SECURITY & CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"], 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# FRONTEND-TO-BACKEND SECURITY KEY (BLOCKS HACKERS)
+API_KEY_NAME = "X-API-Key"
+api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=True)
+
+async def verify_api_key(api_key: str = Security(api_key_header)):
+    expected_key = os.getenv("APP_SECRET_KEY", "fallback_dev_key_123")
+    if api_key != expected_key:
+        raise HTTPException(status_code=403, detail="Unauthorized: Invalid API Key. Hacker blocked.")
+    return api_key
 
 # 3. DATABASE & CONSTANTS (User Economy)
 USER_DB = {} 
@@ -47,8 +58,8 @@ class ScriptRequest(BaseModel):
 
 class CrateItem(BaseModel):
     name: str
-    rarity: str # common, rare, epic, legendary
-    value: int # coin reward
+    rarity: str 
+    value: int 
 
 # --- UTILITY: GET/RESET USER STATS ---
 def get_user_stats(username: str):
@@ -64,7 +75,7 @@ def get_user_stats(username: str):
 
 @app.get("/")
 def health_check():
-    return {"status": "Antrolex Goldmine Engine is Online 🚀", "version": "2026.FINAL"}
+    return {"status": "Active", "message": "Antrolex AI is LIVE & SECURED 🚀"}
 
 # --- FEATURE 1: USER ECONOMY & ADS ---
 @app.post("/watch-rewarded-ad")
@@ -99,9 +110,9 @@ async def open_crate(request: UserAction):
     if won.value > 0: user["coins"] += won.value
     return {"status": "success", "won_item": won, "new_energy": user["energy"], "new_balance": user["coins"]}
 
-# --- FEATURE 3: VIRAL THUMBNAIL GENERATOR ---
+# --- FEATURE 3: VIRAL THUMBNAIL GENERATOR (SECURED) ---
 @app.post("/generate-viral-thumbnail")
-async def generate_viral_thumbnail(user_image: UploadFile = File(...), reference_image: UploadFile = File(...)):
+async def generate_viral_thumbnail(user_image: UploadFile = File(...), reference_image: UploadFile = File(...), api_key: str = Depends(verify_api_key)):
     try:
         ref_path = f"temp_ref_{reference_image.filename}"
         with open(ref_path, "wb") as buffer:
@@ -125,11 +136,11 @@ async def generate_viral_thumbnail(user_image: UploadFile = File(...), reference
         os.remove(ref_path)
         return {"status": "success", "image_url": output[0]}
     except Exception as e:
-        return {"status": "error", "detail": str(e)}
+        raise HTTPException(status_code=500, detail=str(e))
 
-# --- FEATURE 4: STYLE TRANSFER VIDEO EDITOR ---
+# --- FEATURE 4: STYLE TRANSFER VIDEO EDITOR (SECURED + DOWNLOAD FIX) ---
 @app.post("/generate-style-transfer-short")
-async def generate_style_transfer_short(user_video: UploadFile = File(...), ref_video: UploadFile = File(...)):
+async def generate_style_transfer_short(user_video: UploadFile = File(...), ref_video: UploadFile = File(...), api_key: str = Depends(verify_api_key)):
     user_path, ref_path = f"u_{user_video.filename}", f"r_{ref_video.filename}"
     output_path = f"final_{user_video.filename}"
     try:
@@ -154,25 +165,23 @@ async def generate_style_transfer_short(user_video: UploadFile = File(...), ref_
             if final_clips:
                 concatenate_videoclips(final_clips).write_videofile(output_path, codec="libx264", audio_codec="aac")
         
-        os.remove(user_path); os.remove(ref_path)
-        return {"status": "success", "file_name": output_path}
+        os.remove(user_path)
+        os.remove(ref_path)
+        
+        # FIX: Actually send the video file to the user for download
+        return FileResponse(path=output_path, filename=output_path, media_type='video/mp4')
     except Exception as e:
-        return {"status": "error", "detail": str(e)}
+        raise HTTPException(status_code=500, detail=str(e))
 
-# --- FEATURE 5: VIRAL SCRIPT WRITER ---
+# --- FEATURE 5: VIRAL SCRIPT WRITER (SECURED) ---
 @app.post("/generate-viral-script")
-async def generate_script(request: ScriptRequest):
+async def generate_script(request: ScriptRequest, api_key: str = Depends(verify_api_key)):
     prompt = f"Professional YouTube script for gaming channel 'Antrolex Gamerze'. Game: {request.game}. Topic: {request.topic}. Tone: {request.tone}. Under 60s, use slang like 'bro', 'waisted'."
     try:
         response = client.models.generate_content(model='gemini-2.0-flash', contents=prompt)
         return {"status": "success", "script": response.text}
     except Exception as e:
-        return {"status": "error", "detail": str(e)}
-
-# --- FEATURE 6: PAYMENT VERIFICATION ---
-@app.post("/verify-payment")
-async def verify_payment(payment_id: str = Form(...)):
-    return {"status": "verified", "gateway": "Razorpay"}
+        raise HTTPException(status_code=500, detail=str(e))
 
 # --- SERVER START ---
 if __name__ == "__main__":
